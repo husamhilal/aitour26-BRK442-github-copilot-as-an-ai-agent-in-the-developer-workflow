@@ -33,7 +33,6 @@
 
     /* ── Alert banner ── */
     #error-banner {
-      display: none;
       background: #fff5f5;
       border: 1px solid #fc8181;
       color: #c53030;
@@ -339,8 +338,8 @@
         <td class="col-name">${escHtml(p.name)}</td>
         <td class="col-desc">${escHtml(p.description || '')}</td>
         <td class="actions">
-          <button class="btn-edit" onclick="startEdit('${p.id}')" aria-label="Edit ${escHtml(p.name)}">Edit</button>
-          <button class="btn-delete" onclick="deleteProduct('${p.id}', '${escHtml(p.name)}')" aria-label="Delete ${escHtml(p.name)}">Delete</button>
+          <button class="btn-edit" onclick="startEdit('${escHtml(p.id)}')" aria-label="Edit ${escHtml(p.name)}">Edit</button>
+          <button class="btn-delete" onclick="deleteProduct('${escHtml(p.id)}', '${escHtml(p.name)}')" aria-label="Delete ${escHtml(p.name)}">Delete</button>
         </td>`;
       tbody.appendChild(tr);
     });
@@ -382,10 +381,10 @@
     const currentDesc = tr.querySelector('.col-desc').textContent;
 
     tr.innerHTML = `
-      <td><input class="inline-edit" id="edit-name-${id}" value="${escHtml(currentName)}" aria-label="Edit name" required /></td>
-      <td><input class="inline-edit" id="edit-desc-${id}" value="${escHtml(currentDesc)}" aria-label="Edit description" /></td>
+      <td><input class="inline-edit" id="edit-name-${escHtml(id)}" value="${escHtml(currentName)}" aria-label="Edit name" required /></td>
+      <td><input class="inline-edit" id="edit-desc-${escHtml(id)}" value="${escHtml(currentDesc)}" aria-label="Edit description" /></td>
       <td class="actions">
-        <button class="btn-save" onclick="saveEdit('${id}')">Save</button>
+        <button class="btn-save" onclick="saveEdit('${escHtml(id)}')">Save</button>
         <button class="btn-cancel" onclick="loadProducts()">Cancel</button>
       </td>`;
     tr.querySelector(`#edit-name-${id}`).focus();
