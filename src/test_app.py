@@ -50,12 +50,19 @@ def test_get_products_after_create(client):
 # ── POST /products ────────────────────────────────────────────────────────────
 
 def test_create_product(client):
-    res = client.post('/products', json={'name': 'Widget', 'description': 'A widget'})
+    res = client.post('/products', json={'name': 'Widget', 'description': 'A widget', 'category': 'Hardware'})
     assert res.status_code == 201
     body = res.get_json()
     assert body['name'] == 'Widget'
     assert body['description'] == 'A widget'
+    assert body['category'] == 'Hardware'
     assert 'id' in body
+
+
+def test_create_product_default_category(client):
+    res = client.post('/products', json={'name': 'Gadget'})
+    assert res.status_code == 201
+    assert res.get_json()['category'] == ''
 
 
 def test_create_product_missing_name(client):
@@ -86,11 +93,12 @@ def test_get_product_not_found(client):
 
 def test_update_product(client):
     created = client.post('/products', json={'name': 'Old'}).get_json()
-    res = client.put(f'/products/{created["id"]}', json={'name': 'New', 'description': 'Updated'})
+    res = client.put(f'/products/{created["id"]}', json={'name': 'New', 'description': 'Updated', 'category': 'Plumbing'})
     assert res.status_code == 200
     body = res.get_json()
     assert body['name'] == 'New'
     assert body['description'] == 'Updated'
+    assert body['category'] == 'Plumbing'
 
 
 def test_update_product_not_found(client):

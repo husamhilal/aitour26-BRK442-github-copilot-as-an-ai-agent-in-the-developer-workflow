@@ -91,6 +91,17 @@
     }
     .form-row input:focus { border-color: #3182ce; }
 
+    .form-row select {
+      padding: 0.5rem 0.75rem;
+      border: 1px solid #cbd5e0;
+      border-radius: 5px;
+      font-size: 0.9rem;
+      outline: none;
+      background: #fff;
+      transition: border-color .2s;
+    }
+    .form-row select:focus { border-color: #3182ce; }
+
     button.btn-primary {
       background: #2b6cb0;
       color: #fff;
@@ -203,13 +214,15 @@
     }
     button.btn-cancel:hover { background: #edf2f7; }
 
-    td input.inline-edit {
+    td input.inline-edit,
+    td select.inline-edit {
       border: 1px solid #3182ce;
       border-radius: 4px;
       padding: 0.3rem 0.5rem;
       font-size: 0.9rem;
       width: 100%;
       outline: none;
+      background: #fff;
     }
 
     @media (max-width: 600px) {
@@ -247,6 +260,21 @@
           Description
           <input id="new-desc" type="text" placeholder="Optional description" />
         </label>
+        <label class="grow">
+          Category
+          <select id="new-cat" aria-label="Category">
+            <option value="">— Select category —</option>
+            <option>Electrical</option>
+            <option>Garden &amp; Outdoor</option>
+            <option>Hand tools</option>
+            <option>Hardware</option>
+            <option>Lumber &amp; Building materials</option>
+            <option>Paint &amp; Finishes</option>
+            <option>Plumbing</option>
+            <option>Power tools</option>
+            <option>Storage &amp; organization</option>
+          </select>
+        </label>
         <button type="submit" class="btn-primary" id="add-btn">Add Product</button>
       </div>
     </form>
@@ -269,6 +297,7 @@
         <tr>
           <th scope="col">Name</th>
           <th scope="col">Description</th>
+          <th scope="col">Category</th>
           <th scope="col">Actions</th>
         </tr>
       </thead>
@@ -280,6 +309,27 @@
 
 <script>
   const API = '/products';
+
+  const CATEGORIES = [
+    'Electrical',
+    'Garden & Outdoor',
+    'Hand tools',
+    'Hardware',
+    'Lumber & Building materials',
+    'Paint & Finishes',
+    'Plumbing',
+    'Power tools',
+    'Storage & organization'
+  ];
+
+  function buildCategoryOptions(selected) {
+    const options = ['<option value="">— Select category —</option>'];
+    CATEGORIES.forEach(c => {
+      const sel = c === selected ? ' selected' : '';
+      options.push(`<option${sel}>${escHtml(c)}</option>`);
+    });
+    return options.join('');
+  }
 
   function showError(msg) {
     const banner = document.getElementById('error-banner');
@@ -337,6 +387,7 @@
       tr.innerHTML = `
         <td class="col-name">${escHtml(p.name)}</td>
         <td class="col-desc">${escHtml(p.description || '')}</td>
+        <td class="col-cat">${escHtml(p.category || '')}</td>
         <td class="actions">
           <button class="btn-edit" onclick="startEdit('${escHtml(p.id)}')" aria-label="Edit ${escHtml(p.name)}">Edit</button>
           <button class="btn-delete" onclick="deleteProduct('${escHtml(p.id)}', '${escHtml(p.name)}')" aria-label="Delete ${escHtml(p.name)}">Delete</button>
@@ -356,6 +407,7 @@
     dismissError();
     const name = document.getElementById('new-name').value.trim();
     const description = document.getElementById('new-desc').value.trim();
+    const category = document.getElementById('new-cat').value;
     const btn = document.getElementById('add-btn');
 
     btn.disabled = true;
@@ -363,7 +415,7 @@
       const res = await fetch(API, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, description })
+        body: JSON.stringify({ name, description, category })
       });
       if (!res.ok) throw new Error(`Server error: ${res.status}`);
       document.getElementById('add-form').reset();
@@ -379,10 +431,12 @@
     const tr = document.querySelector(`tr[data-id="${id}"]`);
     const currentName = tr.querySelector('.col-name').textContent;
     const currentDesc = tr.querySelector('.col-desc').textContent;
+    const currentCat  = tr.querySelector('.col-cat').textContent;
 
     tr.innerHTML = `
       <td><input class="inline-edit" id="edit-name-${escHtml(id)}" value="${escHtml(currentName)}" aria-label="Edit name" required /></td>
       <td><input class="inline-edit" id="edit-desc-${escHtml(id)}" value="${escHtml(currentDesc)}" aria-label="Edit description" /></td>
+      <td><select class="inline-edit" id="edit-cat-${escHtml(id)}" aria-label="Edit category">${buildCategoryOptions(currentCat)}</select></td>
       <td class="actions">
         <button class="btn-save" onclick="saveEdit('${escHtml(id)}')">Save</button>
         <button class="btn-cancel" onclick="loadProducts()">Cancel</button>
@@ -394,13 +448,14 @@
     dismissError();
     const name = document.getElementById(`edit-name-${id}`).value.trim();
     const description = document.getElementById(`edit-desc-${id}`).value.trim();
+    const category = document.getElementById(`edit-cat-${id}`).value;
     if (!name) { showError('Product name is required.'); return; }
 
     try {
       const res = await fetch(`${API}/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, description })
+        body: JSON.stringify({ name, description, category })
       });
       if (!res.ok) throw new Error(`Server error: ${res.status}`);
       await loadProducts();
