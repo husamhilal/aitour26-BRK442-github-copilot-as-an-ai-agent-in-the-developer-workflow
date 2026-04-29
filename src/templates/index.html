@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Product Store</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: #f0f4f8;
+      color: #1a202c;
+      min-height: 100vh;
+    }
+
+    header {
+      background: #2b6cb0;
+      color: #fff;
+      padding: 1rem 2rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    header h1 { font-size: 1.5rem; font-weight: 700; }
+
+    main {
+      max-width: 900px;
+      margin: 2rem auto;
+      padding: 0 1rem;
+    }
+
+    /* ── Alert banner ── */
+    #error-banner {
+      display: none;
+      background: #fff5f5;
+      border: 1px solid #fc8181;
+      color: #c53030;
+      border-radius: 6px;
+      padding: 0.75rem 1rem;
+      margin-bottom: 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    #error-banner.hidden { display: none; }
+    #error-banner button {
+      background: none;
+      border: none;
+      font-size: 1.25rem;
+      cursor: pointer;
+      color: #c53030;
+      line-height: 1;
+    }
+
+    /* ── Add-product form ── */
+    .card {
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 1px 4px rgba(0,0,0,.12);
+      padding: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .card h2 { font-size: 1.1rem; margin-bottom: 1rem; color: #2d3748; }
+
+    .form-row {
+      display: flex;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    .form-row label {
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: #4a5568;
+    }
+
+    .form-row label.grow { flex: 1 1 160px; }
+
+    .form-row input {
+      padding: 0.5rem 0.75rem;
+      border: 1px solid #cbd5e0;
+      border-radius: 5px;
+      font-size: 0.9rem;
+      outline: none;
+      transition: border-color .2s;
+    }
+    .form-row input:focus { border-color: #3182ce; }
+
+    button.btn-primary {
+      background: #2b6cb0;
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      padding: 0.55rem 1.25rem;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      align-self: flex-end;
+      transition: background .2s;
+    }
+    button.btn-primary:hover { background: #2c5282; }
+    button.btn-primary:disabled { background: #a0aec0; cursor: not-allowed; }
+
+    /* ── Spinner ── */
+    #spinner {
+      display: none;
+      text-align: center;
+      padding: 2rem;
+    }
+    #spinner.visible { display: block; }
+    .spinner-ring {
+      display: inline-block;
+      width: 40px;
+      height: 40px;
+      border: 4px solid #bee3f8;
+      border-top-color: #2b6cb0;
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Product table ── */
+    #product-list h2 { font-size: 1.1rem; color: #2d3748; margin-bottom: 0.75rem; }
+
+    #empty-state {
+      background: #fff;
+      border-radius: 8px;
+      padding: 3rem;
+      text-align: center;
+      color: #718096;
+      box-shadow: 0 1px 4px rgba(0,0,0,.08);
+    }
+    #empty-state p { margin-top: 0.5rem; font-size: 0.95rem; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #fff;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 1px 4px rgba(0,0,0,.12);
+    }
+
+    thead { background: #ebf8ff; }
+    th { padding: 0.75rem 1rem; text-align: left; font-size: 0.8rem; text-transform: uppercase; letter-spacing: .05em; color: #4a5568; }
+    td { padding: 0.75rem 1rem; border-top: 1px solid #e2e8f0; vertical-align: middle; font-size: 0.9rem; }
+    tr:hover td { background: #f7fafc; }
+
+    td.actions { white-space: nowrap; }
+
+    button.btn-edit {
+      background: #ebf8ff;
+      color: #2b6cb0;
+      border: 1px solid #bee3f8;
+      border-radius: 4px;
+      padding: 0.3rem 0.7rem;
+      font-size: 0.8rem;
+      cursor: pointer;
+      margin-right: 0.4rem;
+      font-weight: 600;
+    }
+    button.btn-edit:hover { background: #bee3f8; }
+
+    button.btn-delete {
+      background: #fff5f5;
+      color: #c53030;
+      border: 1px solid #fc8181;
+      border-radius: 4px;
+      padding: 0.3rem 0.7rem;
+      font-size: 0.8rem;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    button.btn-delete:hover { background: #fed7d7; }
+
+    button.btn-save {
+      background: #f0fff4;
+      color: #276749;
+      border: 1px solid #9ae6b4;
+      border-radius: 4px;
+      padding: 0.3rem 0.7rem;
+      font-size: 0.8rem;
+      cursor: pointer;
+      margin-right: 0.4rem;
+      font-weight: 600;
+    }
+    button.btn-save:hover { background: #c6f6d5; }
+
+    button.btn-cancel {
+      background: #fff;
+      color: #718096;
+      border: 1px solid #cbd5e0;
+      border-radius: 4px;
+      padding: 0.3rem 0.7rem;
+      font-size: 0.8rem;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    button.btn-cancel:hover { background: #edf2f7; }
+
+    td input.inline-edit {
+      border: 1px solid #3182ce;
+      border-radius: 4px;
+      padding: 0.3rem 0.5rem;
+      font-size: 0.9rem;
+      width: 100%;
+      outline: none;
+    }
+
+    @media (max-width: 600px) {
+      th:nth-child(2), td:nth-child(2) { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <svg aria-hidden="true" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/>
+  </svg>
+  <h1>Product Store</h1>
+</header>
+
+<main>
+
+  <!-- Error banner -->
+  <div id="error-banner" class="hidden" role="alert" aria-live="assertive">
+    <span id="error-message"></span>
+    <button aria-label="Dismiss error" onclick="dismissError()">&#x2715;</button>
+  </div>
+
+  <!-- Add product form -->
+  <div class="card">
+    <h2>Add a Product</h2>
+    <form id="add-form" onsubmit="handleAdd(event)">
+      <div class="form-row">
+        <label class="grow">
+          Name <span aria-hidden="true" style="color:#c53030">*</span>
+          <input id="new-name" type="text" placeholder="e.g. Widget Pro" required aria-required="true" />
+        </label>
+        <label class="grow">
+          Description
+          <input id="new-desc" type="text" placeholder="Optional description" />
+        </label>
+        <button type="submit" class="btn-primary" id="add-btn">Add Product</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Spinner -->
+  <div id="spinner" aria-label="Loading products" aria-live="polite">
+    <div class="spinner-ring"></div>
+  </div>
+
+  <!-- Product list -->
+  <section id="product-list" aria-label="Product list">
+    <h2>Products</h2>
+    <div id="empty-state" hidden>
+      <strong>No products yet</strong>
+      <p>Add your first product using the form above.</p>
+    </div>
+    <table id="product-table" hidden aria-label="Products">
+      <thead>
+        <tr>
+          <th scope="col">Name</th>
+          <th scope="col">Description</th>
+          <th scope="col">Actions</th>
+        </tr>
+      </thead>
+      <tbody id="product-tbody"></tbody>
+    </table>
+  </section>
+
+</main>
+
+<script>
+  const API = '/products';
+
+  function showError(msg) {
+    const banner = document.getElementById('error-banner');
+    document.getElementById('error-message').textContent = msg;
+    banner.classList.remove('hidden');
+  }
+
+  function dismissError() {
+    document.getElementById('error-banner').classList.add('hidden');
+  }
+
+  function setLoading(on) {
+    const spinner = document.getElementById('spinner');
+    if (on) {
+      spinner.classList.add('visible');
+    } else {
+      spinner.classList.remove('visible');
+    }
+  }
+
+  async function loadProducts() {
+    setLoading(true);
+    dismissError();
+    try {
+      const res = await fetch(API);
+      if (!res.ok) throw new Error(`Server error: ${res.status}`);
+      const products = await res.json();
+      renderProducts(products);
+    } catch (err) {
+      showError(`Failed to load products: ${err.message}`);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function renderProducts(products) {
+    const tbody = document.getElementById('product-tbody');
+    const table = document.getElementById('product-table');
+    const empty = document.getElementById('empty-state');
+
+    tbody.innerHTML = '';
+
+    if (products.length === 0) {
+      table.hidden = true;
+      empty.hidden = false;
+      return;
+    }
+
+    empty.hidden = true;
+    table.hidden = false;
+
+    products.forEach(p => {
+      const tr = document.createElement('tr');
+      tr.dataset.id = p.id;
+      tr.innerHTML = `
+        <td class="col-name">${escHtml(p.name)}</td>
+        <td class="col-desc">${escHtml(p.description || '')}</td>
+        <td class="actions">
+          <button class="btn-edit" onclick="startEdit('${p.id}')" aria-label="Edit ${escHtml(p.name)}">Edit</button>
+          <button class="btn-delete" onclick="deleteProduct('${p.id}', '${escHtml(p.name)}')" aria-label="Delete ${escHtml(p.name)}">Delete</button>
+        </td>`;
+      tbody.appendChild(tr);
+    });
+  }
+
+  function escHtml(str) {
+    const div = document.createElement('div');
+    div.appendChild(document.createTextNode(str));
+    return div.innerHTML;
+  }
+
+  async function handleAdd(e) {
+    e.preventDefault();
+    dismissError();
+    const name = document.getElementById('new-name').value.trim();
+    const description = document.getElementById('new-desc').value.trim();
+    const btn = document.getElementById('add-btn');
+
+    btn.disabled = true;
+    try {
+      const res = await fetch(API, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, description })
+      });
+      if (!res.ok) throw new Error(`Server error: ${res.status}`);
+      document.getElementById('add-form').reset();
+      await loadProducts();
+    } catch (err) {
+      showError(`Failed to add product: ${err.message}`);
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  function startEdit(id) {
+    const tr = document.querySelector(`tr[data-id="${id}"]`);
+    const currentName = tr.querySelector('.col-name').textContent;
+    const currentDesc = tr.querySelector('.col-desc').textContent;
+
+    tr.innerHTML = `
+      <td><input class="inline-edit" id="edit-name-${id}" value="${escHtml(currentName)}" aria-label="Edit name" required /></td>
+      <td><input class="inline-edit" id="edit-desc-${id}" value="${escHtml(currentDesc)}" aria-label="Edit description" /></td>
+      <td class="actions">
+        <button class="btn-save" onclick="saveEdit('${id}')">Save</button>
+        <button class="btn-cancel" onclick="loadProducts()">Cancel</button>
+      </td>`;
+    tr.querySelector(`#edit-name-${id}`).focus();
+  }
+
+  async function saveEdit(id) {
+    dismissError();
+    const name = document.getElementById(`edit-name-${id}`).value.trim();
+    const description = document.getElementById(`edit-desc-${id}`).value.trim();
+    if (!name) { showError('Product name is required.'); return; }
+
+    try {
+      const res = await fetch(`${API}/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, description })
+      });
+      if (!res.ok) throw new Error(`Server error: ${res.status}`);
+      await loadProducts();
+    } catch (err) {
+      showError(`Failed to update product: ${err.message}`);
+    }
+  }
+
+  async function deleteProduct(id, name) {
+    if (!confirm(`Delete "${name}"? This cannot be undone.`)) return;
+    dismissError();
+    try {
+      const res = await fetch(`${API}/${id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error(`Server error: ${res.status}`);
+      await loadProducts();
+    } catch (err) {
+      showError(`Failed to delete product: ${err.message}`);
+    }
+  }
+
+  // Initial load
+  loadProducts();
+</script>
+</body>
+</html>
